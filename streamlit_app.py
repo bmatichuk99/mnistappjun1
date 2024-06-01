@@ -4,6 +4,9 @@ import numpy as np
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image, ImageOps
 
+# Ensure TensorFlow only uses the CPU
+tf.config.set_visible_devices([], 'GPU')
+
 # Load MNIST data
 mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -19,11 +22,12 @@ y_train_combined = np.concatenate((y_train, y_train), axis=0)
 x_test_combined = np.concatenate((x_test, x_test_inverted), axis=0)
 y_test_combined = np.concatenate((y_test, y_test), axis=0)
 
-# Create a simple neural network model
+# Create a simplified neural network model
 def create_model():
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Flatten(input_shape=(28, 28)),
-        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Input(shape=(28, 28)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(64, activation='relu'),
         tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Dense(10, activation='softmax')
     ])
@@ -41,8 +45,9 @@ st.title('MNIST Neural Network Trainer and Tester')
 
 # Train button
 if st.button('Train Neural Network'):
-    model.fit(x_train_combined, y_train_combined, epochs=5)
-    st.write("Model trained successfully!")
+    with st.spinner('Training in progress...'):
+        model.fit(x_train_combined, y_train_combined, epochs=2, batch_size=8)
+    st.success("Model trained successfully!")
 
 # Create a canvas for drawing digits
 st.write("Draw a digit (0-9) below:")
