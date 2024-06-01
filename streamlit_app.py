@@ -9,24 +9,39 @@ mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
-# Create a simple neural network model
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(10, activation='softmax')
-])
+# Create inverted images for training
+x_train_inverted = 1 - x_train
+x_test_inverted = 1 - x_test
 
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+# Combine original and inverted images
+x_train_combined = np.concatenate((x_train, x_train_inverted), axis=0)
+y_train_combined = np.concatenate((y_train, y_train), axis=0)
+x_test_combined = np.concatenate((x_test, x_test_inverted), axis=0)
+y_test_combined = np.concatenate((y_test, y_test), axis=0)
+
+# Create a simple neural network model
+def create_model():
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Flatten(input_shape=(28, 28)),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(10, activation='softmax')
+    ])
+
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    return model
+
+# Initialize the model
+model = create_model()
 
 # Streamlit application
 st.title('MNIST Neural Network Trainer and Tester')
 
 # Train button
 if st.button('Train Neural Network'):
-    model.fit(x_train, y_train, epochs=5)
+    model.fit(x_train_combined, y_train_combined, epochs=5)
     st.write("Model trained successfully!")
 
 # Create a canvas for drawing digits
@@ -60,4 +75,3 @@ if st.button('Test Neural Network'):
         # Predict the digit
         prediction = np.argmax(model.predict(image), axis=-1)
         st.write(f'The model predicts: {prediction[0]}')
-
